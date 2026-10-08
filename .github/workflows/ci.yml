@@ -1,0 +1,32 @@
+# Repository validation that needs neither the Adobe SDK nor Xcode.
+#
+# This workflow deliberately does NOT build the plug-in. Compiling requires the
+# Adobe After Effects SDK, and how a CI runner may obtain it is not settled —
+# see docs/adr/ADR-0002-ci-build-policy.md. A green check here therefore means
+# "the repository is internally consistent", not "the plug-in compiles".
+
+name: validate
+
+on:
+  push:
+    branches: [main, "release-*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Repository validation
+    runs-on: macos-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate repository consistency
+        run: ./scripts/validate.sh

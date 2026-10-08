@@ -1,0 +1,25 @@
+# Build artifacts. The Xcode project is generated from project.yml, and the SDK
+# path is baked into it, so neither belongs in Git.
+build/
+DerivedData/
+
+*.xcodeproj
+*.xcworkspace
+
+# Local machine configuration. This is where the Adobe SDK path lives; the SDK is
+# licensed material and is deliberately not vendored into the repository.
+.env.local
+
+# Agent Skills are installed from rebuildup/project-init; skills-lock.json is
+# committed so a fresh clone can be reconciled against a known revision.
+.agents/skills/
+.claude/skills/
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo

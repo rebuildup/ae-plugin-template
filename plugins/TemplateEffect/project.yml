@@ -1,0 +1,116 @@
+# XcodeGen spec for the TemplateEffect plug-in.
+#
+# The generated .xcodeproj is NOT committed (see .gitignore). Regenerate with
+# `mise run generate`. Keeping it generated means the Adobe SDK location is
+# resolved from AE_SDK_ROOT at build time instead of being frozen into a
+# committed project file.
+
+name: TemplateEffect
+
+options:
+  bundleIdPrefix: io.rebuildup.aetemplate
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    # AE 2026 declares LSMinimumSystemVersion 14.0; do not build a slice that
+    # claims to run older than the host does.
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SDKROOT: macosx
+    CLANG_CXX_LANGUAGE_STANDARD: c++17
+    CLANG_CXX_LIBRARY: libc++
+    ALWAYS_SEARCH_USER_PATHS: NO
+    # Only the entry point needs to be exported (AE_OS_MAC DllExport in the
+    # template header handles it), so hide everything else.
+    GCC_SYMBOLS_PRIVATE_EXTERN: YES
+    GCC_NO_COMMON_BLOCKS: YES
+    CLANG_WARN_DOCUMENTATION_COMMENTS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: NO
+    DEAD_CODE_STRIPPING: YES
+    # PiPL .r sources are compiled by Rez and need this define.
+    REZ_PREPROCESSOR_DEFINITIONS:
+      - __MACH__
+      - "$(inherited)"
+
+targets:
+  TemplateEffect:
+    type: bundle
+    platform: macOS
+
+    productName: TemplateEffect
+    product: TemplateEffect.plugin
+
+    sources:
+      - path: Sources/TemplateEffect.cpp
+      - path: Sources/TemplateEffect_Strings.cpp
+      - path: Resources/TemplateEffect.plugin-Info.plist
+        buildPhase: none
+      # .r files are treated by Xcode as Rez sources and land in the Resources
+      # phase, which embeds the compiled PiPL into the bundle.
+      - path: Sources/TemplateEffectPiPL.r
+
+      # Support code shipped with the Adobe SDK. Referenced in place: the SDK
+      # is not vendored into this repository.
+      - path: "${AE_SDK_ROOT}/Examples/Util/AEFX_SuiteHelper.c"
+        optional: false
+      - path: "${AE_SDK_ROOT}/Examples/Util/Smart_Utils.cpp"
+        optional: false
+      - path: "${AE_SDK_ROOT}/Examples/Util/AEGP_SuiteHandler.cpp"
+        optional: false
+      - path: "${AE_SDK_ROOT}/Examples/Util/MissingSuiteError.cpp"
+        optional: false
+
+    dependencies:
+      - sdk: Cocoa.framework
+
+    settings:
+      base:
+        INFOPLIST_FILE: Resources/TemplateEffect.plugin-Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: io.rebuildup.aetemplate.TemplateEffect
+        WRAPPER_EXTENSION: plugin
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        GENERATE_INFOPLIST_FILE: NO
+        HEADER_SEARCH_PATHS:
+          - "$(AE_SDK_ROOT)/Examples/Headers"
+          - "$(AE_SDK_ROOT)/Examples/Util"
+          - "$(AE_SDK_ROOT)/Examples/Headers/SP"
+          - "$(AE_SDK_ROOT)/Examples/Resources"
+        # The PiPL is the resource-compile entry point, so it needs the same
+        # search paths as the C/C++ sources.
+        REZ_SEARCH_PATHS:
+          - "$(AE_SDK_ROOT)/Examples/Headers"
+          - "$(AE_SDK_ROOT)/Examples/Util"
+          - "$(AE_SDK_ROOT)/Examples/Resources"
+        # Ad-hoc signature. macOS 15+ refuses to load unsigned plug-ins, so the
+        # build must always sign. See docs/reference/macos-code-signing.md.
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGNING_ALLOWED: YES
+        OTHER_CODE_SIGN_FLAGS: "--timestamp=none"
+
+      configs:
+        Debug:
+          # Single active architecture keeps the inner edit/build loop fast.
+          ONLY_ACTIVE_ARCH: YES
+          GCC_OPTIMIZATION_LEVEL: 0
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+        Release:
+          ONLY_ACTIVE_ARCH: NO
+          # The PiPL declares both CodeMacARM64 and CodeMacIntel64 entry
+          # points, so ship a universal binary.
+          ARCHS: "arm64 x86_64"
+          GCC_OPTIMIZATION_LEVEL: s
+
+schemes:
+  TemplateEffect:
+    build:
+      targets:
+        TemplateEffect: all
+    run:
+      config: Debug
+    archive:
+      config: Release

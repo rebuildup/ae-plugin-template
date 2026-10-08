@@ -1,0 +1,70 @@
+# Project-local toolchain and task definitions.
+#
+# Native C/C++ toolchain ownership stays with Xcode and the Adobe SDK. mise owns
+# only auxiliary development tooling used to drive the build reproducibly.
+
+# Project-local auxiliary tooling.
+#
+# Xcode owns the native C/C++ toolchain (compiler, linker, Rez, codesign). mise
+# owns only the tooling that drives the build and the Agent Skills CLI. Adding a
+# tool here is a decision to pin it, not a decision to make it authoritative.
+
+[tools]
+xcodegen = "2.46.0"
+bun = "1.4.2"
+
+[tasks.skills-list]
+description = "List Agent Skills available from rebuildup/project-init"
+run = "bunx skills add rebuildup/project-init --list"
+
+[tasks.skills-bootstrap]
+description = "Install the project-init Agent Skills into this project"
+run = "bunx skills add rebuildup/project-init --skill '*' --agent claude-code --agent codex -y"
+
+[tasks.skills-update]
+description = "Reconcile the installed Agent Skills with their upstream revision"
+run = "bunx skills update -p -y"
+
+[tasks.build]
+description = "Build TemplateEffect (Debug) into build/Debug"
+run = "scripts/build.sh Debug"
+
+[tasks.build-release]
+description = "Build TemplateEffect (Release, universal binary) into build/Release"
+run = "scripts/build.sh Release"
+
+[tasks.generate]
+description = "Regenerate the Xcode project from project.yml"
+run = "scripts/generate.sh"
+
+[tasks.install]
+description = "Build and copy TemplateEffect.plugin into the per-user AE plug-in folder"
+run = "scripts/install.sh"
+
+[tasks.uninstall]
+description = "Remove installed plug-ins from the per-user AE plug-in folder"
+run = "scripts/uninstall.sh"
+
+[tasks.clean]
+description = "Remove build artifacts"
+run = "scripts/clean.sh"
+
+[tasks.sdk-path]
+description = "Print the resolved Adobe After Effects SDK location"
+run = "scripts/sdk-path.sh"
+
+[tasks.verify]
+description = "Build, then verify the bundle structure, signature and exported symbols"
+run = "scripts/verify.sh"
+
+[tasks.check]
+description = "Run every check that does not need After Effects (validate + build + verify)"
+run = ["scripts/validate.sh", "scripts/build.sh Debug", "scripts/verify.sh Debug"]
+
+[tasks.validate]
+description = "Run the SDK-free repository consistency checks (also used by CI)"
+run = "scripts/validate.sh"
+
+[tasks.ae-reveal]
+description = "Reveal the per-user AE plug-in folder in Finder"
+run = "scripts/reveal-plugins.sh"
