@@ -43,6 +43,7 @@ stale / partial / unrelated / unverifiable evidence を current proof として�
 
 - `** BUILD SUCCEEDED **` は compilation の evidence であり、After Effects がその plug-in を load できた evidence ではありません。この repository の README と `scripts/verify.sh` は両者を区別します。
 - macOS 15 以降は unsigned plug-in を load しないため、「ビルド成功」と「AE で動く」は別 condition です。
+- 判定できない検査は成功にしません。判定できなかった項目は「確認できていない」として報告し、一致を確認した項目と区別します。PiPL と `PF_Cmd_GLOBAL_SETUP` の version / outflags / parameter count 検査は AE がダイアログで報告する実際の不具合を検出しますが、その検査自体の検出能力もテストで担保します。
 
 ### Mutable Ownership Safety
 

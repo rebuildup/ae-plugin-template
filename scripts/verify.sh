@@ -123,14 +123,38 @@ if [ -f "$rsrc" ]; then
         "grep -q 'ma64' '$rsrc'"
     check "PiPL declares a match name (eMNA)" bash -c \
         "grep -q 'eMNA' '$rsrc'"
+fi
 
-    # AE compares the PiPL outflags against what PF_Cmd_GLOBAL_SETUP reports and
-    # this template sets PF_OutFlag_DEEP_COLOR_AWARE (1 << 25).
-    if grep -q 'eGLO' "$rsrc" && od -An -tx1 -j "$(( $(grep -abo 'eGLO' "$rsrc" | head -1 | cut -d: -f1) + 12 ))" -N4 "$rsrc" | tr -d ' ' | grep -qi '02000000'; then
-        pass "PiPL outflags match PF_OutFlag_DEEP_COLOR_AWARE"
-    else
-        fail "PiPL outflags are not 0x02000000 (PF_OutFlag_DEEP_COLOR_AWARE)"
+# --- PiPL vs source -------------------------------------------------------
+
+# AE reads the effect version, the global outflags and the parameter count from
+# the PiPL for host-compatibility decisions, and asks the plug-in for the same
+# values from PF_Cmd_GLOBAL_SETUP. When they disagree AE raises an error dialog
+# rather than failing the build, so a plug-in can build, verify and ship with a
+# PiPL that misencodes its own version.
+#
+# scripts/pipl_check.py recomputes both sides from source. A check it could not
+# decide is reported as undecided and never counted as agreement.
+pipl_source="$(find "$(project_root)/plugins" -maxdepth 3 -name '*PiPL.r' \
+    -not -path '*/build/*' -print -quit 2>/dev/null || true)"
+
+if [ -z "$pipl_source" ]; then
+    fail "no PiPL resource source found"
+elif ! command -v python3 >/dev/null 2>&1; then
+    printf '  note  python3 unavailable; the PiPL cross-check did not run\n'
+else
+    # AEGPs do not declare AE_Effect_Global_OutFlags or a match name, so the
+    # cross-check only applies to effects.
+    pipl_rc=0
+    if ! AE_SDK_ROOT="$(resolve_sdk_root)" python3 \
+        "$(project_root)/scripts/pipl_check.py" \
+        "$(dirname "$(dirname "$pipl_source")")" "$pipl_source"; then
+        pipl_rc=$?
     fi
+    case "$pipl_rc" in
+        1) fail "PiPL disagrees with PF_Cmd_GLOBAL_SETUP" ;;
+        2) note "PiPL cross-check could not decide; agreement is NOT established" ;;
+    esac
 fi
 
 # --- signature -----------------------------------------------------------
@@ -161,10 +185,22 @@ if otool -L "$binary" | grep -qE '@executable_path|@loader_path'; then
     fail "binary references @executable_path/@loader_path; AE does not provide a loader path inside the plug-in bundle"
 fi
 
-if otool -L "$binary" | grep -qE '\-> /Users/'; then
+# otool -L prints one "path (architecture N):" header per slice, and each of
+# those headers contains this machine's absolute path to the bundle. Filtering on
+# the leading tab keeps only real dependency lines; dropping just the first line
+# leaves the second slice's header and looks like a /Users link.
+deps="$(otool -L "$binary" | grep -E '^[[:space:]]' || true)"
+
+if grep -qE '\->[[:space:]]*/Users/' <<<"$deps"; then
     fail "binary links an absolute /Users path; this bundle will not load on another machine"
 else
     pass "no absolute /Users paths in link dependencies"
+fi
+
+# An OpenMP runtime would have to be present wherever the plug-in ships, which
+# a plug-in bundle cannot guarantee.
+if grep -qE 'libomp|libiomp|OpenMP' <<<"$deps"; then
+    printf '  note  links an OpenMP runtime; confirm it exists wherever this plug-in ships\n'
 fi
 
 echo
