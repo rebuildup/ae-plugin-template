@@ -14,6 +14,7 @@
 | [ADR-0002](ADR-0002-ci-build-policy.md) | Accepted | SDK 入手経路が未確定のため、CI は build を走らせない |
 | [ADR-0003](ADR-0003-separate-build-from-install.md) | Accepted | build output は repository 配下、AE への導入は別 script |
 | [ADR-0004](ADR-0004-generated-xcodeproj.md) | Accepted | `.xcodeproj` を生成物として扱い、`project.yml` を source of truth にする |
+| [ADR-0005](ADR-0005-pipl-source-consistency.md) | Accepted | PiPL の version / outflags / parameter count と実装の整合を build 時に検査する |
 
 ## まだ決まっていないこと
 
@@ -25,3 +26,5 @@
   開発は成立するが、配布経路は未構築
 - **CI での SDK 入手** — Adobe の配布条件の解釈を含む。contributor の authority 外
 - **plug-in の reference host** — Premiere Pro 等を actual scope に含めるか
+- **AEGP 固有の PiPL 検査** — 現状 AEGP は整合検査の対象外。effect と
+  PiPL property が異なるため

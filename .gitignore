@@ -15,6 +15,10 @@ DerivedData/
 .agents/skills/
 .claude/skills/
 
+# Python bytecode from scripts/
+__pycache__/
+*.pyc
+
 # OS
 .DS_Store
 

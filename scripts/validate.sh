@@ -41,6 +41,16 @@ for script in scripts/*.sh scripts/lib/*.sh; do
     fi
 done
 
+# --- python entry points parse --------------------------------------------
+
+for module in scripts/*.py; do
+    if python3 -c "import ast,sys; ast.parse(open(sys.argv[1]).read())" "$module"; then
+        pass "$module parses"
+    else
+        fail "$module has a syntax error"
+    fi
+done
+
 # --- every script is executable and has a shebang ------------------------
 
 for script in scripts/*.sh; do

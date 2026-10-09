@@ -74,9 +74,15 @@ mise run build
 mise run verify
 ```
 
-bundle structure、PiPL、exported symbol、signature、link dependency を検査します。
-「`BUILD SUCCEEDED` なのに After Effects に出てこない」という状態を
+bundle structure、PiPL、exported symbol、signature、link dependency、および
+PiPL の effect version / global outflags / parameter count と実装の整合を
+検査します。「`BUILD SUCCEEDED` なのに After Effects に出てこない」という状態を
 build 時点で検出するためのものです。
+
+PiPL と実装の検査は AE 2026 で実際に観測された不具合に対応しています。
+PiPL の version が独自 encoding で作られた Effect は AE が
+「バージョンが一致しません」と報告しますが、build は通ります。
+詳細は [docs/reference/pipl-consistency.md](docs/reference/pipl-consistency.md)。
 
 ### 5. After Effects に導入する
 
@@ -95,6 +101,7 @@ mise run install
 | 操作 | command |
 | --- | --- |
 | Debug build | `mise run build` |
+| PiPL 検査のテスト | `python3 scripts/pipl_check_test.py`（`AE_SDK_ROOT` が必要） |
 | Release build（universal binary） | `mise run build-release` |
 | Xcode project を再生成 | `mise run generate` |
 | bundle 検証 | `mise run verify` |
@@ -153,6 +160,8 @@ project ファイルに焼き込まれるためです。
 │  ├─ lib/sdk.sh                  SDK 解決
 │  ├─ build.sh                    compile
 │  ├─ verify.sh                   bundle 検証
+│  ├─ pipl_check.py               PiPL と実装の整合検査
+│  ├─ pipl_check_test.py          上記の負のテスト
 │  ├─ install.sh                  AE へ導入
 │  └─ uninstall.sh                導入を取り除く
 └─ .github/workflows/ci.yml       SDK 不要な validation のみ

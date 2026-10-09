@@ -13,6 +13,7 @@
 xcodegen = "2.46.0"
 bun = "1.4.2"
 
+
 [tasks.skills-list]
 description = "List Agent Skills available from rebuildup/project-init"
 run = "bunx skills add rebuildup/project-init --list"
@@ -57,9 +58,18 @@ run = "scripts/sdk-path.sh"
 description = "Build, then verify the bundle structure, signature and exported symbols"
 run = "scripts/verify.sh"
 
+[tasks.pipl-check-test]
+description = "Negative tests for the PiPL/source consistency check (needs AE_SDK_ROOT)"
+run = "scripts/pipl_check_test.sh"
+
 [tasks.check]
-description = "Run every check that does not need After Effects (validate + build + verify)"
-run = ["scripts/validate.sh", "scripts/build.sh Debug", "scripts/verify.sh Debug"]
+description = "Run every check that does not need After Effects (validate + pipl-check tests + build + verify)"
+run = [
+  "scripts/validate.sh",
+  "scripts/pipl_check_test.sh",
+  "scripts/build.sh Debug",
+  "scripts/verify.sh Debug",
+]
 
 [tasks.validate]
 description = "Run the SDK-free repository consistency checks (also used by CI)"
